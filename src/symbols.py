@@ -184,8 +184,6 @@ class Symbols:
                 find_strike = atm - (distance * dct_sym[self._base]["diff"])
             option_pattern = self._base + self.expiry + c_or_p + str(find_strike)
 
-            print(option_pattern)
-
             for k, v in dct_symbols.items():
 
                 if v == option_pattern:

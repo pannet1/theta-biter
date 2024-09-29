@@ -1,9 +1,12 @@
+BANKNIFTY:
+  away_from_atm: 0
+  exchange: NFO
+  expiry: 01OCT24
+  half: 15
+  quantity: 30
 log:
-  show: True
   level: 10
-program:
-  start: "9:15"
-  stop: "15:15"
+  show: 1
 trade:
-  start: "9:30"
-  stop: "15:00"
+  base: NIFTY
+  capital: 50000

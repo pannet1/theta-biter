@@ -61,34 +61,5 @@ class Helper:
 
 if __name__ == "__main__":
     Helper.api
-    param = {
-        "symbol": "BANKNIFTY01OCT24C54400",
-        "quantity": abs(15),
-        "product": "M",
-        "side": "B",
-        "price": 0,
-        "trigger_price": 0,
-        "order_type": "MKT",
-        "exchange": "NFO",
-        "tag": "enter",
-    }
-    resp = Helper._api.order_place(**param)
-    print(resp)
-    """
-        ret = Helper._api.finvasia.place_order(
-        tradingsymbol="BANKNIFTY01OCT24C54400",
-        quantity=15,
-        discloseqty=0,
-        product_type="C",
-        buy_or_sell="B",
-        price_type="MKT",
-        exchange="NFO",
-        price=200.00,
-        trigger_price=199.50,
-        retention="DAY",
-        remarks="my_order_001",
-    )
-    print(ret)
     resp = Helper._api.finvasia.get_order_book()
     print(resp)
-    """

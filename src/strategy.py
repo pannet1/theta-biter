@@ -3,7 +3,7 @@ import pendulum as pdlm
 from symbols import dct_sym
 from api import Helper
 from toolkit.kokoo import timer
-from constants import send_messages, F_SWITCH
+from constants import send_messages, F_SWITCH, logging, O_SETG
 
 
 """
@@ -44,6 +44,7 @@ class Strategy:
                 self._tokens = self._symbols.get_tokens(self._atm)
         except Exception as e:
             message = f"{e} while atm"
+            logging.warning(message)
             send_messages(message)
             print_exc()
         finally:
@@ -58,8 +59,12 @@ class Strategy:
             atm = self.atm
             self._ce = self._symbols.find_option_by_distance(atm, 0, "C", self._tokens)
             self._pe = self._symbols.find_option_by_distance(atm, 0, "P", self._tokens)
+            message = f'current strikes:  {self._pe["symbol"]} {self._ce["symbol"]}'
+            logging.info(message)
+            send_messages(message)
         except Exception as e:
             message = f"{e} while info"
+            logging.error(message)
             send_messages(message)
             print_exc()
 
@@ -75,6 +80,7 @@ class Strategy:
             return False
         except Exception as e:
             message = f"{e} while is timeout"
+            logging.error("message")
             send_messages(message)
             print_exc()
 
@@ -86,6 +92,8 @@ class Strategy:
         """
         try:
 
+            base = self._symbols._base
+            distance = O_SETG[base]["distance"]
             last_price = Helper.ltp(self._symbols._option_exchange, self._ce["token"])
             if last_price is not None:
                 self._ce["last_price"] = last_price
@@ -94,11 +102,14 @@ class Strategy:
             if last_price is not None:
                 self._pe["last_price"] = last_price
 
-            print(f'pe: {self._pe["last_price"]} ce: {self._ce["last_price"]}')
-            timer(1)
-            if abs(self._pe["last_price"] - self._ce["last_price"]) <= 100:
-                print("differance is lesser than equal to 100")
+            message = f'pe: {self._pe["last_price"]} ce: {self._ce["last_price"]}'
+            logging.info(message)
+            send_messages(message)
+            if abs(self._pe["last_price"] - self._ce["last_price"]) <= distance:
+                message = f"differance is lesser than equal to {distance}"
+                logging.info(message)
                 return True
+            timer(1)
             return False
         except Exception as e:
             message = f"{e} while is ce pe closes"
@@ -116,6 +127,7 @@ class Strategy:
                     self.is_trade = True
         except Exception as e:
             message = f"{e} while enter"
+            logging.error(message)
             send_messages(message)
             print_exc()
 
@@ -124,13 +136,12 @@ class Strategy:
             self.atm
 
             if self.is_ce_pe_closest:
-                print("is ce pe closest")
                 self.entry
 
             if self.is_timeout:
                 self.strikes
         except Exception as e:
-            print(f"{e} while run")
             message = f"{e} while run"
+            logging.error(message)
             send_messages(message)
             print_exc()

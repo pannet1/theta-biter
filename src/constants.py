@@ -28,6 +28,9 @@ O_FUTL = Fileutils()
 S_DATA = "../data/"
 F_SWITCH = S_DATA + "switch.txt"
 S_LOG = S_DATA + "log.txt"
+F_SETG = S_DATA + "settings.yml"
+
+
 if not O_FUTL.is_file_exists(S_LOG):
     """
     description:
