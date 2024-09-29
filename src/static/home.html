@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Theta Biter</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic" />
+    <style>
+    body {
+    margin: 0 auto;
+    max-width: 800px;
+    }
+    .form-row {
+        display: flex;
+        justify-content: flex-end;
+        padding: .5em;
+      }
+      .form-row > label {
+        padding: .5em 1em .5em 0;
+        flex: 1;
+      }
+      .form-row > input {
+        flex: 2;
+      }
+      .form-row > input,
+      .form-row > button {
+        padding: .5em;
+      }
+      .form-row > button {
+      background: gray;
+      color: white;
+      border: 0;
+      }
+
+  .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 25px;
+      margin-right: 10px;
+  }
+
+  /* Hide the default checkbox */
+  .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+  }
+
+  /* The slider */
+  .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 25px;
+  }
+
+  /* The circle inside the slider */
+  .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 2.5px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+  }
+
+  /* Change the background color and move the slider when checked */
+  input:checked + .slider {
+      background-color: #4CAF50;
+  }
+
+  input:checked + .slider:before {
+      transform: translateX(25px);
+  }
+
+  /* Style the submit button */
+  button {
+      padding: 5px 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+  }
+
+  button:hover {
+      background-color: #45a049;
+  }
+    </style>
+  </head>
+  <body>
+      <article class="card">
+        <header>
+          <h3>Configuration</h3>
+          <span style="text-align:right"><a href="/show">status</a> | <a href="/log">RAW</a>
+          <form action="/enable" method="POST" id="toggleForm">
+              <label class="toggle-switch">
+                  <input type="checkbox" name="toggleValue" id="toggleValue" />
+                  <span class="slider"></span>
+              </label>
+          </form>
+        </span>
+        </header>
+        <form
+          id="yamlForm"
+          style="padding: 10px"
+          action="/update_yaml"
+          method="post"
+        >
+          {% macro render_form(data, parent_keys=[]) %} {% for key, value in
+          data.items() %} {% set field_name = (parent_keys + [key]) | join('][')
+          %} {% if value is mapping %}
+          <fieldset style="margin-left: 20px">
+            <legend style="font-size: 125%; font-style: bold">{{ key }}</legend>
+            {{ render_form(value, parent_keys + [key]) }}
+          </fieldset>
+          {% else %}
+          <div class="form-row">
+            <label>{{ key }}:</label>
+            <input
+              type="text"
+              name="{{ '[' ~ field_name ~ ']' }}"
+              value="{{ value }}"
+            />
+           </div>
+            {% endif %} {% endfor %} {% endmacro %} {{ render_form(yaml_data) }}
+     
+          <button type="submit">Save Changes</button>
+        </form>
+        <footer>
+          <p id="status"></p>
+        </footer>
+      </article>
+    </main>
+
+<script>
+  document.getElementById("yamlForm").onsubmit = async function (e) {
+    e.preventDefault();
+    const formData = new FormData(document.getElementById("yamlForm"));
+
+    // Helper function to convert a string like 'key1[key2][key3]' into a nested object structure
+    function buildNestedObject(base, keys, value) {
+      let lastKey = keys.pop();  // The last key in the array
+      let nested = base;  // Start at the base of the object
+
+      keys.forEach((key) => {
+        if (!nested[key]) {
+          nested[key] = {};  // Create an empty object if the key doesn't exist
+        }
+        nested = nested[key];  // Drill down to the next level
+      });
+
+      // Convert numeric strings into numbers
+      if (!isNaN(value) && value.trim() !== "") {
+        value = parseFloat(value);  // Convert the value to a number
+      }
+
+      nested[lastKey] = value;  // Assign the value to the innermost key
+    }
+
+    // Convert formData into a nested object structure
+    const formDataObject = {};
+    for (let [key, value] of formData.entries()) {
+      // Split key into parts based on the bracket notation (e.g., 'key1[key2][key3]')
+      let keys = key.split(/\[|\]\[|\]/).filter(k => k);  // Removes empty strings
+      buildNestedObject(formDataObject, keys, value);
+    }
+
+    // Send POST request to update YAML file
+    const response = await fetch("/update_yaml", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formDataObject),
+    });
+
+    const result = await response.json();
+    document.getElementById("status").textContent = result.message;
+  };
+
+
+    document.getElementById('toggleValue').addEventListener('change', function() {
+        const value = this.checked ? 1 : 0;
+        
+        fetch('/enable', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ toggleValue: value })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+
+
+    document.getElementById('toggleValue').addEventListener('change', function() {
+        const value = this.checked ? 1 : 0;
+        
+        fetch('/enable', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ toggleValue: value })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+</script>
+  </body>
+</html>

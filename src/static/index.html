@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log Stream</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .message-box {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        overflow-y: scroll;
+        height: 300px;
+      }
+      .message {
+        padding: 8px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e1e1e1;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Live Log Stream</h1>
+    <div class="message-box" id="messageBox"></div>
+
+    <script>
+      // Set up an EventSource to listen to the /log SSE stream
+      const eventSource = new EventSource("/log");
+
+      // Get the message box element where messages will be displayed
+      const messageBox = document.getElementById("messageBox");
+
+      // Listen for incoming events and update the page
+      eventSource.onmessage = function (event) {
+        // Create a new message element
+        const newMessage = document.createElement("div");
+        newMessage.classList.add("message");
+        newMessage.textContent = event.data;
+
+        // Append the new message to the message box
+        messageBox.appendChild(newMessage);
+
+        // Auto-scroll to the bottom of the message box
+        messageBox.scrollTop = messageBox.scrollHeight;
+      };
+
+      // Handle connection errors
+      eventSource.onerror = function () {
+        const errorMessage = document.createElement("div");
+        errorMessage.classList.add("message");
+        errorMessage.textContent = "Connection lost. Reconnecting...";
+        messageBox.appendChild(errorMessage);
+      };
+    </script>
+  </body>
+</html>

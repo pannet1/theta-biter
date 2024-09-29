@@ -1,0 +1,9 @@
+log:
+  show: True
+  level: 10
+program:
+  start: "9:15"
+  stop: "15:15"
+trade:
+  start: "9:30"
+  stop: "15:00"

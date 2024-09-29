@@ -1,0 +1,15 @@
+wheel
+setuptools==58.2.0
+pydantic==1.9
+PyYAML==6.0
+pyOpenssl==21.0
+pandas
+pendulum
+pyotp
+fastapi[standard]
+jinja2
+sse-starlette
+git+https://github.com/pannet1/omspy-brokers 
+git+https://github.com/pannnet1/omspy
+git+https://github.com/pannet1/toolkit
+git+https://github.com/pannet1/NorenRestApiPy
