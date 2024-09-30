@@ -121,7 +121,7 @@ class Strategy:
         try:
             """open file to read file"""
             with open(F_SWITCH, "r") as f:
-                if int(f.read()) == 1 and not self.is_trade:
+                if (int(f.read()) == 1) and not self.is_trade:
                     Helper.one_side(self._ce["symbol"])
                     Helper.one_side(self._pe["symbol"])
                     self.is_trade = True

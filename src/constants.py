@@ -9,6 +9,7 @@ from os import path
 from traceback import print_exc
 from pprint import pprint
 import requests
+from requests.exceptions import ConnectionError, Timeout
 import json
 
 """
@@ -130,6 +131,13 @@ def send_messages(message):
             url, headers={"Content-Type": "application/json"}, data=json.dumps(data)
         )
 
-    except Exception as e:
-        # Print the response
-        print(f"{e} problem in send messages")
+    except (ConnectionError, Timeout):
+        # Handle both ConnectionError and Timeout here
+        print("Server is unavailable. Returning control back to the calling function.")
+        return None  # or any other value indicating failure
+    except requests.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+        return None
+    except Exception as err:
+        print(f"An unexpected error occurred: {err}")
+        return None
