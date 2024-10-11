@@ -1,12 +1,13 @@
 BANKNIFTY:
   away_from_atm: 0
+  distance: 20
   exchange: NFO
   expiry: 01OCT24
-  half: 15
   quantity: 30
+  stop: 40
 log:
   level: 10
   show: 1
 trade:
-  base: NIFTY
-  capital: 50000
+  base: BANKNIFTY
+  x_amount: 5000

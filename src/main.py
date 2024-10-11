@@ -3,7 +3,7 @@ from strategy import Strategy
 from constants import O_SETG
 
 
-def run():
+def main():
     try:
         base = O_SETG["trade"]["base"]
         symbols = Symbols(
@@ -12,14 +12,15 @@ def run():
             expiry=O_SETG[base]["expiry"],
         )
         symbols.get_exchange_token_map_finvasia()
-        strategy = Strategy(quantity=O_SETG[base]["quantity"], symbols=symbols)
+        sgy = Strategy(quantity=O_SETG[base]["quantity"], symbols=symbols)
 
         while True:
-            strategy.run()
+            sgy.run()
     except KeyboardInterrupt as k:
         print(f"{k} due to keyboardInterrupt")
     except Exception as e:
         print(f"{e} in run")
 
 
-run()
+if __name__ == "__main__":
+    main()
