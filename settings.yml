@@ -2,7 +2,7 @@ BANKNIFTY:
   away_from_atm: 0
   distance: 20
   exchange: NFO
-  expiry: 01OCT24
+  expiry: 16OCT24
   quantity: 30
   stop: 40
 log:
