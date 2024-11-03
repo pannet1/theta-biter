@@ -10,6 +10,7 @@ fastapi[standard]
 jinja2
 sse-starlette
 requests
+websocket-client
 git+https://github.com/pannet1/omspy-brokers 
 git+https://github.com/pannet1/omspy
 git+https://github.com/pannet1/toolkit
