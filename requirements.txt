@@ -9,7 +9,8 @@ pyotp
 fastapi[standard]
 jinja2
 sse-starlette
+requests
 git+https://github.com/pannet1/omspy-brokers 
-git+https://github.com/pannnet1/omspy
+git+https://github.com/pannet1/omspy
 git+https://github.com/pannet1/toolkit
 git+https://github.com/pannet1/NorenRestApiPy
