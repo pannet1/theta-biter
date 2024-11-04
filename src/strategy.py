@@ -6,14 +6,6 @@ from toolkit.kokoo import timer
 from constants import send_messages, F_SWITCH, logging, O_SETG
 
 
-"""
-Web or windows based UI In python for Shoonya broker
-Straddle trigger button on a button click
-5.  If SL order is triggered, print a notification message that sl has been triggered  
-6.  Monitor the PNL if this has reached to X amount close half positions
-"""
-
-
 class Strategy:
 
     def __init__(
@@ -109,7 +101,7 @@ class Strategy:
             logging.info(message)
             send_messages(message)
         except Exception as e:
-            message = f"{e} while is ce pe closes"
+            message = f"{e} while on tick"
             send_messages(message)
             print_exc()
 
@@ -125,7 +117,7 @@ class Strategy:
             timer(1)
             return False
         except Exception as e:
-            message = f"{e} while is ce pe closes"
+            message = f"{e} while is ce pe closest"
             send_messages(message)
             print_exc()
 
@@ -135,15 +127,15 @@ class Strategy:
             with open(F_SWITCH, "r") as f:
                 if int(f.read()) == 1:
                     base = self._symbols._base
-                    quantity = O_SETG[base]["quantity"]
-                    stop = O_SETG[base]["stop"]
-                    self._ce["sl"], self._ce["bargs"] = Helper.one_side(
+                    quantity = int(O_SETG[base]["quantity"])
+                    stop = int(O_SETG[base]["stop"])
+                    self._ce["sl"], self._ce["bargs"] = Helper.enter(
                         self._ce["symbol"],
                         self._ce["last_price"],
                         quantity,
                         stop,
                     )
-                    self._pe["sl"], self._pe["bargs"] = Helper.one_side(
+                    self._pe["sl"], self._pe["bargs"] = Helper.enter(
                         self._pe["symbol"],
                         self._pe["last_price"],
                         quantity,
@@ -159,16 +151,51 @@ class Strategy:
     def is_stop_hit(self):
         try:
             FLAG = False
-            if self._ce["last_price"] > self._ce["bargs"]["trigger_price"]:
+
+            # Ensure `_ce` and `_pe` contain expected structure before accessing keys
+            ce_last_price = self._ce.get("last_price", None)
+            ce_bargs = self._ce.get("bargs", {})
+            ce_trigger_price = ce_bargs.get("trigger_price", None)
+
+            pe_last_price = self._pe.get("last_price", None)
+            pe_bargs = self._pe.get("bargs", {})
+            pe_trigger_price = pe_bargs.get("trigger_price", None)
+
+            # Debug statements to log current values and structure
+            if callable(ce_last_price) or callable(ce_trigger_price):
+                raise TypeError(
+                    f"Invalid type in CE: ce_last_price={ce_last_price}, ce_trigger_price={ce_trigger_price}"
+                )
+            if callable(pe_last_price) or callable(pe_trigger_price):
+                raise TypeError(
+                    f"Invalid type in PE: pe_last_price={pe_last_price}, pe_trigger_price={pe_trigger_price}"
+                )
+
+            # Perform stop loss checks
+            if (
+                ce_last_price is not None
+                and ce_trigger_price is not None
+                and ce_last_price > ce_trigger_price
+            ):
                 message = "stop loss hit for ce"
                 send_messages(message)
                 FLAG = True
-            elif self._pe["last_price"] > self._pe["bargs"]["trigger_price"]:
+            elif (
+                pe_last_price is not None
+                and pe_trigger_price is not None
+                and pe_last_price > pe_trigger_price
+            ):
                 message = "stop loss hit for pe"
                 send_messages(message)
                 FLAG = True
+
         except Exception as e:
-            message = f"{e} while is stop hit"
+            # Improved logging to capture actual values and structure at error time
+            message = (
+                f"{e} while checking stop loss. "
+                f"ce: last_price={ce_last_price}, trigger_price={ce_trigger_price}; "
+                f"pe: last_price={pe_last_price}, trigger_price={pe_trigger_price}"
+            )
             send_messages(message)
             print_exc()
         finally:
@@ -190,7 +217,7 @@ class Strategy:
                 self.on_tick()
                 self.is_stop_hit()
 
-                mtm = Helper.mtm
+                mtm = Helper.mtm()
                 if mtm > self.exit_value:
                     Helper.close_positions(half=True)
                     self.state = 2

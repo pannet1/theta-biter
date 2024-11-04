@@ -38,46 +38,47 @@ class Helper:
             print_exc()
 
     @classmethod
-    def one_side(cls, symbol, ltp, quantity, stop):
+    def enter(cls, symbol, ltp, quantity, stop):
         try:
+            resp = None
+            sl1 = {}
+            tp = ltp + stop
             bargs = dict(
                 symbol=symbol,
-                quantity=int(quantity / 2),
+                quantity=quantity,
                 product="M",
                 side="B",
-                price=0,
-                trigger_price=ltp + stop,
-                order_type="SLM",
+                price=tp + 0.05,
+                trigger_price=tp,
+                order_type="SL",
                 exchange="NFO",
                 tag="stop",
             )
-            send_messages(str(bargs))
             sl1 = cls._api.order_place(**bargs)
+            send_messages(str(bargs))
             send_messages(f"api responded with {sl1}")
 
             if sl1:
-                sl2 = cls._api.order_place(**bargs)
-                send_messages(f"api responded with {sl2}")
-                if sl2:
-                    sargs = dict(
-                        symbol=symbol,
-                        quantity=quantity,
-                        product="M",
-                        side="S",
-                        price=0,
-                        trigger_price=0,
-                        order_type="MKT",
-                        exchange="NFO",
-                        tag="enter",
-                    )
-                    send_messages(str(sargs))
-                    resp = cls._api.order_place(**sargs)
-                    send_messages(f"api responded with {resp}")
-                    return [sl1, sl2], bargs
+                sargs = dict(
+                    symbol=symbol,
+                    quantity=quantity,
+                    product="M",
+                    side="S",
+                    price=0,
+                    trigger_price=0,
+                    order_type="MKT",
+                    exchange="NFO",
+                    tag="enter",
+                )
+                resp = cls._api.order_place(**sargs)
+                send_messages(str(sargs))
+                send_messages(f"api responded with {resp}")
         except Exception as e:
             message = f"helper error {e} while placing order"
             send_messages(message)
             print_exc()
+        finally:
+            return sl1, bargs
 
     @classmethod
     def close_positions(cls, half=False):
@@ -89,26 +90,22 @@ class Helper:
                 quantity = int(quantity / 2) if half else quantity
 
             send_messages(f"trying to close {pos['symbol']}")
+
+            is_close = False
             if pos["quantity"] < 0:
-                args = dict(
-                    symbol=pos["symbol"],
-                    quantity=quantity,
-                    disclosed_quantity=quantity,
-                    product="M",
-                    side="B",
-                    order_type="MKT",
-                    exchange="NFO",
-                    tag="close",
-                )
-                resp = cls._api.order_place(**args)
-                send_messages(f"api responded with {resp}")
+                side = "B"
+                is_close = True
             elif quantity > 0:
+                side = "S"
+                is_close = True
+
+            if is_close:
                 args = dict(
                     symbol=pos["symbol"],
                     quantity=quantity,
                     disclosed_quantity=quantity,
                     product="M",
-                    side="S",
+                    side=side,
                     order_type="MKT",
                     exchange="NFO",
                     tag="close",
@@ -134,7 +131,7 @@ class Helper:
             if any(positions):
                 # calc value
                 for pos in positions:
-                    pnl += pos["urmtom"]
+                    pnl += pos["urmtom"] + pos["rpnl"]
         except Exception as e:
             message = f"while calculating {e}"
             send_messages(f"api responded with {message}")
@@ -143,6 +140,15 @@ class Helper:
 
 
 if __name__ == "__main__":
+    import pandas as pd
+    from constants import S_DATA
+
     Helper.api
     resp = Helper._api.finvasia.get_order_book()
+    if any(resp):
+        pd.DataFrame(resp).to_csv(S_DATA + "orders.csv")
+
+    resp = Helper._api.positions
     print(resp)
+    if any(resp):
+        pd.DataFrame(resp).to_csv(S_DATA + "positions.csv")
