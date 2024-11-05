@@ -150,7 +150,6 @@ class Strategy:
 
     def is_stop_hit(self):
         try:
-            FLAG = False
 
             # Ensure `_ce` and `_pe` contain expected structure before accessing keys
             ce_last_price = self._ce.get("last_price", None)
@@ -177,17 +176,17 @@ class Strategy:
                 and ce_trigger_price is not None
                 and ce_last_price > ce_trigger_price
             ):
-                message = "stop loss hit for ce"
-                send_messages(message)
-                FLAG = True
+                message = "CALL stop loss hit"
+                send_messages(message, "important")
+                self.state = 2
             elif (
                 pe_last_price is not None
                 and pe_trigger_price is not None
                 and pe_last_price > pe_trigger_price
             ):
-                message = "stop loss hit for pe"
-                send_messages(message)
-                FLAG = True
+                message = "PUT stop loss hit"
+                send_messages(message, "important")
+                self.state = 2
 
         except Exception as e:
             # Improved logging to capture actual values and structure at error time
@@ -198,8 +197,6 @@ class Strategy:
             )
             send_messages(message)
             print_exc()
-        finally:
-            return FLAG
 
     def run(self):
         try:
@@ -212,18 +209,22 @@ class Strategy:
                 if self.is_ce_pe_closest:
                     self.entry()
 
-            elif self.state == 1:
+            elif self.state >= 1:
                 # update prices
                 self.on_tick()
-                self.is_stop_hit()
+
+                if self.state == 1:
+                    self.is_stop_hit()
 
                 mtm = Helper.mtm()
                 if mtm > self.exit_value:
                     Helper.close_positions(half=True)
-                    self.state = 2
+                    send_messages("PROFIT !", "important")
+                    self.state = 3
                 elif mtm < self.exit_value * -1:
                     Helper.close_positions()
-                    self.state = 3
+                    send_messages("PORTFOLIO STOP HIT", "important")
+                    __import__("sys").exit()
 
         except Exception as e:
             message = f"{e} while run"

@@ -1,9 +1,10 @@
-from constants import F_SWITCH, F_SETG, O_SETG, O_FUTL, logging
+from constants import F_SWITCH, F_SETG, O_SETG, logging
 import asyncio
 import uvicorn
 from fastapi import FastAPI
 from starlette.requests import Request
 import yaml
+import json
 
 from sse_starlette.sse import EventSourceResponse
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -20,15 +21,14 @@ messages = []
 
 class Message(BaseModel):
     content: str
+    priority: str = "normal"  # Can be "normal" or "important"
 
 
 @app.post("/send_message")
 async def send_message(message: Message):
-    # Extract message content
-    message_content = message.content
 
-    # Add the message to the in-memory store
-    messages.append(message_content)
+    # Add the message with priority
+    messages.append({"content": message.content, "priority": message.priority})
 
     # Return a JSON response confirming receipt of the message
     return JSONResponse(content={"status": "Message received"}, status_code=200)
@@ -47,18 +47,16 @@ async def show_log(req: Request):
     """
 
     async def event_publisher():
-
         try:
             while True:
-                # yield dict(id=..., event=..., data=...)
                 if any(messages):
-                    yield messages
-                    messages.pop(0)
+                    message = messages.pop(0)
+                    # Yield message in JSON format with priority field
+                    yield f"{message}"
                 else:
                     await asyncio.sleep(0.9)
         except asyncio.CancelledError as e:
             logging.debug(f"disconnected from client (via refresh/close) {req.client}")
-            # Do any other cleanup, if any
             raise e
 
     return EventSourceResponse(event_publisher())

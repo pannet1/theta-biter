@@ -105,8 +105,6 @@ def set_logger():
         based on user choice from settings
     """
     level = O_SETG["log"]["level"]
-    if O_SETG["log"]["show"] == False:
-        return Logger(level)
     return Logger(level, S_LOG)
 
 
@@ -119,12 +117,14 @@ with open(F_SWITCH, "w") as f:
     f.write("0")
 
 
-def send_messages(message):
+def send_messages(message, priority=None):
     try:
         url = "http://localhost:8000/send_message"
 
         # The message data you want to send in JSON format
         data = {"content": message}
+
+        data["priority"] = "important" if priority else "normal"
 
         # Send the POST request with the JSON payload
         requests.post(
